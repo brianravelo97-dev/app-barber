@@ -948,7 +948,23 @@ alter table public.notifications enable row level security;
 drop policy if exists profiles_self on public.profiles;
 create policy profiles_self on public.profiles for select using (id = auth.uid() or public.is_admin());
 drop policy if exists profiles_admin on public.profiles;
-create policy profiles_admin on public.profiles for update using (public.is_admin()) with check (public.is_admin());
+drop policy if exists profiles_self_update on public.profiles;
+-- Cada usuario puede editar solo su nombre; el rol se cambia exclusivamente con set_user_role().
+create policy profiles_self_update on public.profiles for update using (id = auth.uid()) with check (id = auth.uid());
+revoke update on public.profiles from anon, authenticated;
+grant update (full_name) on public.profiles to authenticated;
+
+create or replace function public.set_user_role(p_user_id uuid, p_role text)
+returns void language plpgsql volatile security definer set search_path = public as $$
+begin
+  if not public.is_admin() then raise exception 'FORBIDDEN'; end if;
+  if p_role not in ('admin','staff','none') then raise exception 'INVALID_ROLE'; end if;
+  if p_user_id = auth.uid() and p_role <> 'admin' then raise exception 'SELF_DEMOTION'; end if;
+  update public.profiles set role = p_role where id = p_user_id;
+  if not found then raise exception 'NOT_FOUND'; end if;
+end $$;
+revoke execute on function public.set_user_role(uuid, text) from public, anon;
+grant execute on function public.set_user_role(uuid, text) to authenticated;
 
 -- Lectura pública de contenido del sitio
 drop policy if exists settings_read on public.business_settings;

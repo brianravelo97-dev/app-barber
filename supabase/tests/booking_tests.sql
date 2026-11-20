@@ -243,3 +243,24 @@ end $$;
 
 reset role;
 select 'TODAS LAS PRUEBAS PASARON' as resultado;
+
+-- 17. Roles: un staff no puede auto-promoverse; el admin sí puede asignar roles
+insert into auth.users (id, email) values ('33333333-0000-0000-0000-000000000002', 'staff@example.com');
+update profiles set role = 'staff' where id = '33333333-0000-0000-0000-000000000002';
+set request.jwt.claim.sub = '33333333-0000-0000-0000-000000000002';
+set role authenticated;
+select pg_temp.expect_error($q$select set_user_role('33333333-0000-0000-0000-000000000002', 'admin')$q$, 'FORBIDDEN');
+select pg_temp.expect_error($q$update profiles set role = 'admin' where id = '33333333-0000-0000-0000-000000000002'$q$, 'permission denied for table profiles');
+update profiles set full_name = 'Staff Uno' where id = '33333333-0000-0000-0000-000000000002';
+reset role;
+set request.jwt.claim.sub = '33333333-0000-0000-0000-000000000001';
+set role authenticated;
+select set_user_role('33333333-0000-0000-0000-000000000002', 'admin');
+select pg_temp.expect_error($q$select set_user_role('33333333-0000-0000-0000-000000000001', 'staff')$q$, 'SELF_DEMOTION');
+reset role;
+do $$ begin
+  if (select role from profiles where id = '33333333-0000-0000-0000-000000000002') <> 'admin' then raise exception 'Test 17 falló'; end if;
+  if (select full_name from profiles where id = '33333333-0000-0000-0000-000000000002') <> 'Staff Uno' then raise exception 'Test 17: nombre'; end if;
+  raise notice 'OK 17 — roles y permisos de perfiles';
+end $$;
+select 'PRUEBAS DE ROLES PASARON' as resultado;

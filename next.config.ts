@@ -10,6 +10,10 @@ const supabaseHost = (() => {
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  experimental: {
+    // Subida de imágenes (máx. 5 MB) mediante Server Actions
+    serverActions: { bodySizeLimit: "6mb" },
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
