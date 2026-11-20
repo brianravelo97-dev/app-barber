@@ -25,7 +25,8 @@ export default async function BookingPage({
   const { nueva } = await searchParams;
   if (!isSupabaseConfigured || !/^[A-Za-z0-9]{4,12}$/.test(code)) notFound();
 
-  const [settings, { data }] = await Promise.all([getSettings(), createPublicClient().rpc("get_booking_public", { p_code: code })]);
+  const [settings, { data, error }] = await Promise.all([getSettings(), createPublicClient().rpc("get_booking_public", { p_code: code })]);
+  if (error) throw new Error("No se pudo cargar la reserva");
   const b = data as PublicBooking | null;
   if (!b) notFound();
 

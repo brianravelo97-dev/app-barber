@@ -1,4 +1,5 @@
 import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 import type { ComponentProps, ReactNode } from "react";
 
 export const inputClass =
@@ -39,17 +40,17 @@ export function Field({
 }
 
 export function Input({ className, ...rest }: ComponentProps<"input">) {
-  return <input className={clsx(inputClass, className)} {...rest} />;
+  return <input className={twMerge(inputClass, className)} {...rest} />;
 }
 
 export function Textarea({ className, ...rest }: ComponentProps<"textarea">) {
-  return <textarea className={clsx(inputClass, "h-auto min-h-24 py-3 leading-relaxed", className)} {...rest} />;
+  return <textarea className={twMerge(inputClass, "h-auto min-h-24 py-3 leading-relaxed", className)} {...rest} />;
 }
 
 export function Select({ className, children, ...rest }: ComponentProps<"select">) {
   return (
     <select
-      className={clsx(
+      className={twMerge(
         inputClass,
         "appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%2212%22%20height=%2212%22%20viewBox=%220%200%2024%2024%22%20fill=%22none%22%20stroke=%22%238a8784%22%20stroke-width=%222%22%3E%3Cpath%20d=%22m6%209%206%206%206-6%22/%3E%3C/svg%3E')] bg-[length:14px] bg-[right_1rem_center] bg-no-repeat pr-10",
         className,

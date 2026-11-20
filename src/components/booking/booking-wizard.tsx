@@ -81,6 +81,10 @@ function Wizard({ settings, services, barbers, links, schedules, hours, holidays
   const [slots, setSlots] = useState<Slot[] | null>(null);
   const [slotsError, setSlotsError] = useState<string | null>(null);
   const [slot, setSlot] = useState<Slot | null>(null);
+  // Fecha elegida automáticamente (no por el cliente): si no tiene horas, se avanza sola.
+  const autoDate = useRef(!initialDate);
+  const autoTries = useRef(0);
+  const [skippedNotice, setSkippedNotice] = useState(false);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -150,12 +154,21 @@ function Wizard({ settings, services, barbers, links, schedules, hours, holidays
       const res = await fetch(`/api/availability?${qs}`, { cache: "no-store" });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
+      if (json.slots.length === 0 && autoDate.current && autoTries.current < 14) {
+        const next = days.find((d) => d.open && d.date > date);
+        if (next) {
+          autoTries.current += 1;
+          setSkippedNotice(true);
+          setDate(next.date);
+          return;
+        }
+      }
       setSlots(json.slots);
     } catch (e) {
       setSlotsError(e instanceof Error ? e.message : "No se pudo cargar la disponibilidad");
       setSlots([]);
     }
-  }, [serviceId, date, barberId]);
+  }, [serviceId, date, barberId, days]);
 
   useEffect(() => {
     if (step === 2) loadSlots();
@@ -180,6 +193,8 @@ function Wizard({ settings, services, barbers, links, schedules, hours, holidays
   }
 
   function pickBarber(id: string) {
+    autoDate.current = true;
+    autoTries.current = 0;
     setBarberId(id);
     setBarberChosen(true);
     setSlot(null);
@@ -402,7 +417,20 @@ function Wizard({ settings, services, barbers, links, schedules, hours, holidays
           {/* PASO 3: FECHA Y HORA */}
           {step === 2 && (
             <div>
-              <DateStrip days={days} value={date} onChange={(d) => { setDate(d); setSlot(null); }} locale={settings.locale} />
+              <DateStrip
+                days={days}
+                value={date}
+                onChange={(d) => {
+                  autoDate.current = false;
+                  setSkippedNotice(false);
+                  setDate(d);
+                  setSlot(null);
+                }}
+                locale={settings.locale}
+              />
+              {skippedNotice && slots && slots.length > 0 && (
+                <p className="mt-3 text-xs text-ink-400">Te mostramos el próximo día con horas disponibles.</p>
+              )}
 
               <div className="mt-8">
                 {slots === null ? (

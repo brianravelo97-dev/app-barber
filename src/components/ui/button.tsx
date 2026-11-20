@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 import { LoaderCircle } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 
@@ -27,7 +28,7 @@ const sizes: Record<Size, string> = {
 };
 
 export function buttonClass(variant: Variant = "primary", size: Size = "md", className?: string) {
-  return clsx(base, variants[variant], sizes[size], className);
+  return twMerge(clsx(base, variants[variant], sizes[size], className));
 }
 
 type ButtonProps = ComponentProps<"button"> & {
